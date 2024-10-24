@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Set your admin password
+      - GF_AUTH_ANONYMOUS_ENABLED=true  # Allow anonymous access (optional)
+      - GF_USERS_ALLOW_SIGN_UP=false  # Disable user sign up
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - loki
+
+  otel:
+    image: otel/opentelemetry-collector:latest
+    ports:
+      - "4317:4317"  # gRPC endpoint
+      - "4318:4318"  # HTTP endpoint for OTLP
+    volumes:
+      - ./alloy.yaml:/etc/otelcol/config.yaml
+    command: ["--config", "/etc/otelcol/config.yaml"]
+
+  tempo:
+    image: grafana/tempo:latest
+    volumes:
+      - ./var/tempo/traces:/var/tempo/traces  # Corrected volume path
+      - ./tempo.yaml:/etc/tempo/tempo.yaml                # Corrected volume path
+    ports:
+      - "3200:3100"
+    command: ["--config.file=/etc/tempo/tempo.yaml"]
+    networks:
+      - loki
+
+  mimir:
+    image: grafana/mimir:latest
+    ports:
+      - "9000:9000"
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - MIMIR_STORAGE_TYPE=filesystem
+      - MIMIR_STORAGE_FILESYSTEM_PATH=/data
+      - MIMIR_SERVER_HTTP_PORT=9000
+
+networks:
+   loki:
+
+volumes:
+  grafana-storage:

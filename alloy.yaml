@@ -1,0 +1,20 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+processors:
+  batch:
+    timeout: 10s
+exporters:
+  debug: {}
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]  # Change to logging for better visibility
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
