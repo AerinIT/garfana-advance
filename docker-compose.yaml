@@ -59,4 +59,4 @@ networks:
 
 volumes:
   grafana-storage:
-  grafana-volume:
+  
